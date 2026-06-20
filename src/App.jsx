@@ -186,6 +186,7 @@ function App() {
   const loadArchetype = useCallback(async (slug, date = '') => {
     setLoading(true)
     setError('')
+    setArchetypeDetail(null)
 
     try {
       const params = new URLSearchParams({ slug })
