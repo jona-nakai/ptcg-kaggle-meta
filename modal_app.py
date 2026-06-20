@@ -23,16 +23,16 @@ app = modal.App("ptcg-kaggle-meta-ingest")
     ephemeral_disk=524_288,
     timeout=60 * 60 * 3,
 )
-def hourly_ingest() -> dict:
+def hourly_ingest(dataset_date: str | None = None) -> dict:
     import sys
 
     sys.path.insert(0, APP_ROOT)
 
     from backend.ingest import ingest
 
-    return ingest(Path("/tmp/ptcg-kaggle-meta/Data/kaggle"))
+    return ingest(Path("/tmp/ptcg-kaggle-meta/Data/kaggle"), dataset_date)
 
 
 @app.local_entrypoint()
-def main():
-    print(hourly_ingest.remote())
+def main(date: str | None = None):
+    print(hourly_ingest.remote(date))

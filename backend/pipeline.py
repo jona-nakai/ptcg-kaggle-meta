@@ -34,6 +34,14 @@ def latest_dataset_dir(rows: list[dict[str, str]]) -> Path:
     return DATA_ROOT / slug
 
 
+def dataset_from_dir(rows: list[dict[str, str]], dataset_dir: Path) -> dict[str, str]:
+    slug = dataset_dir.name
+    for row in rows:
+        if row.get("daily_dataset_slug") == slug:
+            return row
+    return latest_dataset_from_index(rows)
+
+
 def read_first_visualize_object(path: Path, max_bytes: int = 4_000_000) -> dict:
     marker = '"visualize": ['
     decoder = json.JSONDecoder()
@@ -177,11 +185,11 @@ def build_compact_dataset(
     index_manifest: Path = INDEX_MANIFEST,
 ) -> dict[str, list[dict] | dict]:
     rows = read_index_rows(index_manifest)
-    latest = latest_dataset_from_index(rows)
     dataset_dir = dataset_dir or latest_dataset_dir(rows)
-    dataset_date = latest.get("date")
+    selected = dataset_from_dir(rows, dataset_dir)
+    dataset_date = selected.get("date")
     if not dataset_date:
-        raise ValueError("Index manifest did not include a date for the latest dataset.")
+        raise ValueError("Index manifest did not include a date for the selected dataset.")
 
     battle_files = sorted(dataset_dir.glob("*.json"))
     cards_by_id: dict[int, str] = {}
@@ -289,14 +297,14 @@ def build_compact_dataset(
     summary = {
         "generatedAt": datetime.now(UTC).isoformat(),
         "source": {
-            "date": latest.get("date"),
-            "datasetSlug": latest.get("daily_dataset_slug"),
-            "datasetUrl": latest.get("daily_dataset_url"),
+            "date": selected.get("date"),
+            "datasetSlug": selected.get("daily_dataset_slug"),
+            "datasetUrl": selected.get("daily_dataset_url"),
             "indexRows": len(rows),
-            "reportedEpisodeCount": int(latest.get("episode_count") or 0),
-            "reportedTotalBytes": int(latest.get("total_bytes") or 0),
-            "topAvgScore": float(latest.get("top_avg_score") or 0),
-            "medianAvgScore": float(latest.get("median_avg_score") or 0),
+            "reportedEpisodeCount": int(selected.get("episode_count") or 0),
+            "reportedTotalBytes": int(selected.get("total_bytes") or 0),
+            "topAvgScore": float(selected.get("top_avg_score") or 0),
+            "medianAvgScore": float(selected.get("median_avg_score") or 0),
         },
         "totals": {
             "battleFiles": len(battle_files),
@@ -314,13 +322,13 @@ def build_compact_dataset(
     return {
         "daily_datasets": [
             {
-                "dataset_date": latest.get("date"),
-                "dataset_slug": latest.get("daily_dataset_slug"),
-                "dataset_url": latest.get("daily_dataset_url"),
-                "episode_count": int(latest.get("episode_count") or 0),
-                "total_bytes": int(latest.get("total_bytes") or 0),
-                "top_avg_score": float(latest.get("top_avg_score") or 0),
-                "median_avg_score": float(latest.get("median_avg_score") or 0),
+                "dataset_date": selected.get("date"),
+                "dataset_slug": selected.get("daily_dataset_slug"),
+                "dataset_url": selected.get("daily_dataset_url"),
+                "episode_count": int(selected.get("episode_count") or 0),
+                "total_bytes": int(selected.get("total_bytes") or 0),
+                "top_avg_score": float(selected.get("top_avg_score") or 0),
+                "median_avg_score": float(selected.get("median_avg_score") or 0),
             }
         ],
         "cards": cards,
@@ -331,4 +339,3 @@ def build_compact_dataset(
         "daily_card_usage": daily_card_usage,
         "summary": summary,
     }
-

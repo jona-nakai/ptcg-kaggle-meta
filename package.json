@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "python -m scripts.dev_api",
+    "check:archetypes": "python -m scripts.check_archetypes",
     "build": "vite build",
     "preview": "vite preview"
   },
