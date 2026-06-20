@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
@@ -152,10 +152,14 @@ function App() {
   const [archetypePage, setArchetypePage] = useState(1)
   const [countPage, setCountPage] = useState(1)
   const [inclusionPage, setInclusionPage] = useState(1)
+  const requestIdRef = useRef(0)
 
   const loadMeta = useCallback(async (date = pathDate(), replaceUrl = false) => {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
     setLoading(true)
     setError('')
+    setArchetypeDetail(null)
 
     try {
       const params = new URLSearchParams()
@@ -168,6 +172,8 @@ function App() {
       }
 
       const nextMeta = await response.json()
+      if (requestIdRef.current !== requestId) return
+
       setMeta(nextMeta)
       setArchetypePage(1)
       setCountPage(1)
@@ -178,13 +184,18 @@ function App() {
         window.history.replaceState({}, '', targetPath)
       }
     } catch (error) {
+      if (requestIdRef.current !== requestId) return
       setError(error.message)
     } finally {
-      setLoading(false)
+      if (requestIdRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }, [])
 
   const loadArchetype = useCallback(async (slug, date = '') => {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
     setLoading(true)
     setError('')
     setArchetypeDetail(null)
@@ -199,6 +210,8 @@ function App() {
       }
 
       const detail = await response.json()
+      if (requestIdRef.current !== requestId) return
+
       setArchetypeDetail(detail)
 
       const targetPath = `/archetype/${encodeURIComponent(detail.archetype.slug)}?date=${detail.date}`
@@ -206,9 +219,12 @@ function App() {
         window.history.replaceState({}, '', targetPath)
       }
     } catch (error) {
+      if (requestIdRef.current !== requestId) return
       setError(error.message)
     } finally {
-      setLoading(false)
+      if (requestIdRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -277,7 +293,7 @@ function App() {
     )
   }
 
-  if (loading && !meta) {
+  if (!meta) {
     return (
       <main className="page">
         <section className="empty-state">
@@ -415,6 +431,7 @@ function Dashboard({
               <div className="count">
                 <strong>{formatPercent(archetype.metaShare)}</strong>
                 <span>meta share</span>
+                <span>{formatNumber(archetype.appearances)} decklists</span>
               </div>
             </button>
           ))}
