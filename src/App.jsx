@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
@@ -617,4 +618,9 @@ function ArchetypePage({ detail, loading, onDateChange, onBack, onMatchupClick }
   )
 }
 
-createRoot(document.getElementById('root')).render(<App />)
+createRoot(document.getElementById('root')).render(
+  <>
+    <App />
+    <Analytics />
+  </>,
+)
