@@ -49,23 +49,58 @@ function barWidth(value, maxValue) {
   return `${Math.min((count / max) * 100, 100)}%`
 }
 
-function Header({ children, dates, selectedDate, onDateChange }) {
+function matchupBarStyle(winRate) {
+  const value = Number(winRate)
+  if (!Number.isFinite(value)) {
+    return {
+      width: '0%',
+      '--matchup-color-start': '#d97706',
+      '--matchup-color-end': '#fbbf24',
+    }
+  }
+
+  const clamped = Math.max(0, Math.min(value, 1))
+  const hue = Math.round(clamped * 120)
+  const start = `hsl(${hue} 72% 38%)`
+  const end = `hsl(${hue} 78% 54%)`
+
+  return {
+    width: barWidth(clamped, 1),
+    '--matchup-color-start': start,
+    '--matchup-color-end': end,
+  }
+}
+
+function winRateBadgeStyle(winRate) {
+  const value = Number(winRate)
+  const clamped = Number.isFinite(value) ? Math.max(0, Math.min(value, 1)) : 0.5
+  const hue = Math.round(clamped * 120)
+  return {
+    '--win-rate-bg': `hsl(${hue} 62% 18%)`,
+    '--win-rate-border': `hsl(${hue} 64% 34%)`,
+    '--win-rate-text': `hsl(${hue} 86% 78%)`,
+  }
+}
+
+function Header({ children, dates, selectedDate, onDateChange, showLinks = true, showDatePicker = true }) {
   return (
     <header className="app-header">
       <div>
         {children}
-        <div className="header-links">
-          <a className="competition-link" href={competitionUrl} target="_blank" rel="noreferrer">
-            Kaggle Competition Link
-          </a>
-          <span className="header-link-separator">/</span>
-          <a className="competition-link" href={episodesIndexUrl} target="_blank" rel="noreferrer">
-            Kaggle Competition Data Link
-          </a>
-        </div>
+        {showLinks ? (
+          <div className="header-links">
+            <a className="competition-link" href={competitionUrl} target="_blank" rel="noreferrer">
+              Kaggle Competition Link
+            </a>
+            <span className="header-link-separator">/</span>
+            <a className="competition-link" href={episodesIndexUrl} target="_blank" rel="noreferrer">
+              Kaggle Competition Data Link
+            </a>
+          </div>
+        ) : null}
       </div>
 
-      {dates?.length > 0 ? (
+      {showDatePicker && dates?.length > 0 ? (
         <label className="date-picker">
           <span>Date</span>
           <div className="select-shell">
@@ -332,7 +367,7 @@ function Dashboard({
         <div className="section-heading">
           <div>
             <h2>Archetypes</h2>
-            <p className="section-subtitle">Automatically grouped deck families for this date.</p>
+            <p className="section-subtitle">Share of parsed decklists assigned to each archetype. Sorted by meta share.</p>
           </div>
           <div className="table-controls">
             <input
@@ -368,13 +403,16 @@ function Dashboard({
               <div className="card-copy">
                 <strong>{archetype.name}</strong>
                 <span>{archetype.signatureCards.map((card) => card.name).join(', ')}</span>
+                <span className="secondary-metric win-rate-badge" style={winRateBadgeStyle(archetype.winRate)}>
+                  Win rate {formatPercent(archetype.winRate)}
+                </span>
               </div>
               <div className="bar-cell">
                 <div className="bar archetype-bar" style={{ width: barWidth(archetype.appearances, maxArchetypeAppearances) }} />
               </div>
               <div className="count">
                 <strong>{formatPercent(archetype.metaShare)}</strong>
-                <span>{formatNumber(archetype.appearances)} decks</span>
+                <span>meta share</span>
               </div>
             </button>
           ))}
@@ -479,10 +517,17 @@ function Dashboard({
 
 function ArchetypePage({ detail, loading, onDateChange, onBack, onMatchupClick }) {
   const maxInclusion = 1
+  const [activeSection, setActiveSection] = useState('cards')
 
   return (
     <main className="page">
-      <Header dates={detail.availableDates} selectedDate={detail.date} onDateChange={onDateChange}>
+      <Header
+        dates={detail.availableDates}
+        selectedDate={detail.date}
+        onDateChange={onDateChange}
+        showLinks={false}
+        showDatePicker={false}
+      >
         <button className="back-button" type="button" onClick={onBack}>
           Back to meta
         </button>
@@ -495,60 +540,77 @@ function ArchetypePage({ detail, loading, onDateChange, onBack, onMatchupClick }
       <section className="panel">
         <div className="section-heading">
           <div>
-            <h2>Cards</h2>
-            <p className="section-subtitle">How often each card appears inside this archetype.</p>
+            <h2>{activeSection === 'cards' ? 'Cards' : 'Matchups'}</h2>
+            <p className="section-subtitle">
+              {activeSection === 'cards'
+                ? 'How often each card appears inside this archetype.'
+                : 'Win rates against other classified archetypes.'}
+            </p>
           </div>
-        </div>
-
-        <div className="card-list" aria-busy={loading}>
-          {detail.cards.map((card) => (
-            <article className="card-row" key={card.id}>
-              <CardIdentity card={card} detail={`Average ${card.avgCopies.toFixed(2)} copies`} />
-              <div className="bar-cell">
-                <div className="bar archetype-bar" style={{ width: barWidth(card.inclusionPct, maxInclusion) }} />
-              </div>
-              <div className="count">
-                <strong>{formatPercent(card.inclusionPct)}</strong>
-                <span>{formatNumber(card.inclusionCount)} decks</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <h2>Matchups</h2>
-            <p className="section-subtitle">Win rates against other classified archetypes.</p>
-          </div>
-        </div>
-
-        <div className="card-list" aria-busy={loading}>
-          {detail.matchups.map((matchup) => (
+          <div className="section-switch" role="tablist" aria-label="Deck detail section">
             <button
-              className="card-row archetype-row"
+              className={activeSection === 'cards' ? 'active' : ''}
               type="button"
-              key={matchup.opponentId}
-              onClick={() => matchup.opponentSlug && onMatchupClick(matchup.opponentSlug)}
+              role="tab"
+              aria-selected={activeSection === 'cards'}
+              onClick={() => setActiveSection('cards')}
             >
-              <div className="card-copy">
-                <strong>{matchup.opponentName}</strong>
-                <span>{formatNumber(matchup.games)} games</span>
-              </div>
-              <div className="bar-cell">
-                <div className="bar matchup-bar" style={{ width: barWidth(matchup.winRate, 1) }} />
-              </div>
-              <div className="count">
-                <strong>{formatPercent(matchup.winRate)}</strong>
-                <span>{formatNumber(matchup.wins)}-{formatNumber(matchup.losses)}</span>
-              </div>
+              Cards
             </button>
-          ))}
-          {detail.matchups.length === 0 ? (
-            <p className="empty-table-note">No matchup rows are available for this archetype yet.</p>
-          ) : null}
+            <button
+              className={activeSection === 'matchups' ? 'active' : ''}
+              type="button"
+              role="tab"
+              aria-selected={activeSection === 'matchups'}
+              onClick={() => setActiveSection('matchups')}
+            >
+              Matchups
+            </button>
+          </div>
         </div>
+
+        {activeSection === 'cards' ? (
+          <div className="card-list" aria-busy={loading}>
+            {detail.cards.map((card) => (
+              <article className="card-row" key={card.id}>
+                <CardIdentity card={card} detail={`Average ${card.avgCopies.toFixed(2)} copies`} />
+                <div className="bar-cell">
+                  <div className="bar archetype-bar" style={{ width: barWidth(card.inclusionPct, maxInclusion) }} />
+                </div>
+                <div className="count">
+                  <strong>{formatPercent(card.inclusionPct)}</strong>
+                  <span>{formatNumber(card.inclusionCount)} decks</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="card-list" aria-busy={loading}>
+            {detail.matchups.map((matchup) => (
+              <button
+                className="card-row archetype-row"
+                type="button"
+                key={matchup.opponentId}
+                onClick={() => matchup.opponentSlug && onMatchupClick(matchup.opponentSlug)}
+              >
+                <div className="card-copy">
+                  <strong>{matchup.opponentName}</strong>
+                  <span>{formatNumber(matchup.games)} games</span>
+                </div>
+                <div className="bar-cell matchup-cell" aria-label={`${formatPercent(matchup.winRate)} win rate`}>
+                  <div className="bar matchup-bar" style={matchupBarStyle(matchup.winRate)} />
+                </div>
+                <div className="count">
+                  <strong>{formatPercent(matchup.winRate)}</strong>
+                  <span>{formatNumber(matchup.wins)}-{formatNumber(matchup.losses)}</span>
+                </div>
+              </button>
+            ))}
+            {detail.matchups.length === 0 ? (
+              <p className="empty-table-note">No matchup rows are available for this archetype yet.</p>
+            ) : null}
+          </div>
+        )}
       </section>
     </main>
   )

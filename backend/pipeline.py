@@ -266,7 +266,7 @@ def build_compact_dataset(
                         "status": statuses[player_index]
                         if player_index < len(statuses)
                         else None,
-                        "won": winner_index == player_index,
+                        "won": None if winner_index is None else winner_index == player_index,
                     }
                 )
         except Exception as exc:

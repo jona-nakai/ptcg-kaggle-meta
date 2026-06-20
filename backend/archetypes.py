@@ -160,9 +160,9 @@ def build_archetype_dataset(compact: dict[str, Any]) -> dict[str, list[dict[str,
     for row in battle_players:
         deck_hash = row["deck_hash"]
         deck_stats[deck_hash].appearances += 1
-        if row.get("won"):
+        if row.get("won") is True:
             deck_stats[deck_hash].wins += 1
-        else:
+        elif row.get("won") is False:
             deck_stats[deck_hash].losses += 1
         players_by_episode[row["episode_id"]].append(row)
 
@@ -272,10 +272,11 @@ def build_archetype_dataset(compact: dict[str, Any]) -> dict[str, list[dict[str,
             (player_b, archetype_b, archetype_a),
         ):
             key = (archetype_id, opponent_id)
-            matchup_counts[key]["games"] += 1
-            if player.get("won"):
+            if player.get("won") is True:
+                matchup_counts[key]["games"] += 1
                 matchup_counts[key]["wins"] += 1
-            else:
+            elif player.get("won") is False:
+                matchup_counts[key]["games"] += 1
                 matchup_counts[key]["losses"] += 1
 
     archetype_matchups = [

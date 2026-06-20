@@ -201,6 +201,44 @@ h2 {
   gap: 12px;
 }
 
+.section-switch {
+  background: var(--control);
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  width: 260px;
+}
+
+.section-switch button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 7px 14px;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.section-switch button.active {
+  background: #2563eb;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
+  color: #ffffff;
+}
+
+.section-switch button:focus-visible {
+  outline: 3px solid rgba(96, 165, 250, 0.32);
+  outline-offset: 2px;
+}
+
 .search-input {
   background: var(--control);
   border: 1px solid var(--control-border);
@@ -371,6 +409,21 @@ h2 {
   overflow: hidden;
 }
 
+.matchup-cell {
+  position: relative;
+}
+
+.matchup-cell::after {
+  background: rgba(248, 250, 252, 0.7);
+  content: "";
+  height: 18px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+}
+
 .bar {
   background: linear-gradient(90deg, #2f80ed, #16a085);
   border-radius: inherit;
@@ -387,7 +440,11 @@ h2 {
 }
 
 .matchup-bar {
-  background: linear-gradient(90deg, #dc2626, #f59e0b);
+  background: linear-gradient(
+    90deg,
+    var(--matchup-color-start, #d97706),
+    var(--matchup-color-end, #fbbf24)
+  );
 }
 
 .count {
@@ -404,6 +461,24 @@ h2 {
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.secondary-metric {
+  color: #c7d2fe;
+  font-weight: 800;
+}
+
+.win-rate-badge {
+  align-self: flex-start;
+  background: var(--win-rate-bg, rgba(30, 41, 59, 0.9));
+  border: 1px solid var(--win-rate-border, var(--border-strong));
+  border-radius: 999px;
+  color: var(--win-rate-text, #c7d2fe);
+  display: inline-flex;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 4px 8px;
+  width: fit-content;
 }
 
 .empty-state {
@@ -449,6 +524,10 @@ h2 {
   .table-controls {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .section-switch {
+    width: 100%;
   }
 
   .search-input {

@@ -61,9 +61,13 @@ create table if not exists public.battle_players (
   deck_hash text not null references public.decks(deck_hash),
   reward integer,
   status text,
-  won boolean not null default false,
+  won boolean,
   primary key (episode_id, player_index)
 );
+
+alter table public.battle_players
+  alter column won drop not null,
+  alter column won drop default;
 
 create table if not exists public.daily_card_usage (
   dataset_date date not null references public.daily_datasets(dataset_date) on delete cascade,
