@@ -140,6 +140,20 @@ function CardIdentity({ card, detail }) {
   )
 }
 
+function Pager({ page, hasNextPage, loading, onPrevious, onNext }) {
+  return (
+    <div className="pager">
+      <button type="button" onClick={onPrevious} disabled={page <= 1 || loading}>
+        Previous
+      </button>
+      <span>Page {page}</span>
+      <button type="button" onClick={onNext} disabled={!hasNextPage || loading}>
+        Next
+      </button>
+    </div>
+  )
+}
+
 function App() {
   const [route, setRoute] = useState(currentRoute)
   const [meta, setMeta] = useState(null)
@@ -398,15 +412,6 @@ function Dashboard({
                 setArchetypePage(1)
               }}
             />
-            <div className="pager">
-              <button type="button" onClick={() => setArchetypePage((page) => Math.max(page - 1, 1))} disabled={archetypePage <= 1 || loading}>
-                Previous
-              </button>
-              <span>Page {archetypePage}</span>
-              <button type="button" onClick={() => setArchetypePage((page) => page + 1)} disabled={!hasNextArchetypePage || loading}>
-                Next
-              </button>
-            </div>
           </div>
         </div>
 
@@ -439,6 +444,15 @@ function Dashboard({
             <p className="empty-table-note">No archetypes have been generated for this date yet.</p>
           ) : null}
         </div>
+        <div className="table-footer">
+          <Pager
+            page={archetypePage}
+            hasNextPage={hasNextArchetypePage}
+            loading={loading}
+            onPrevious={() => setArchetypePage((page) => Math.max(page - 1, 1))}
+            onNext={() => setArchetypePage((page) => page + 1)}
+          />
+        </div>
       </section>
 
       <section className="panel">
@@ -458,15 +472,6 @@ function Dashboard({
                 setInclusionPage(1)
               }}
             />
-            <div className="pager">
-              <button type="button" onClick={() => setInclusionPage((page) => Math.max(page - 1, 1))} disabled={inclusionPage <= 1 || loading}>
-                Previous
-              </button>
-              <span>Page {inclusionPage}</span>
-              <button type="button" onClick={() => setInclusionPage((page) => page + 1)} disabled={!hasNextInclusionPage || loading}>
-                Next
-              </button>
-            </div>
           </div>
         </div>
 
@@ -487,6 +492,15 @@ function Dashboard({
             )
           })}
         </div>
+        <div className="table-footer">
+          <Pager
+            page={inclusionPage}
+            hasNextPage={hasNextInclusionPage}
+            loading={loading}
+            onPrevious={() => setInclusionPage((page) => Math.max(page - 1, 1))}
+            onNext={() => setInclusionPage((page) => page + 1)}
+          />
+        </div>
       </section>
 
       <section className="panel">
@@ -506,15 +520,6 @@ function Dashboard({
                 setCountPage(1)
               }}
             />
-            <div className="pager">
-              <button type="button" onClick={() => setCountPage((page) => Math.max(page - 1, 1))} disabled={countPage <= 1 || loading}>
-                Previous
-              </button>
-              <span>Page {countPage}</span>
-              <button type="button" onClick={() => setCountPage((page) => page + 1)} disabled={!hasNextCountPage || loading}>
-                Next
-              </button>
-            </div>
           </div>
         </div>
 
@@ -528,6 +533,15 @@ function Dashboard({
               <div className="count">{formatNumber(card.copiesPlayed)}</div>
             </article>
           ))}
+        </div>
+        <div className="table-footer">
+          <Pager
+            page={countPage}
+            hasNextPage={hasNextCountPage}
+            loading={loading}
+            onPrevious={() => setCountPage((page) => Math.max(page - 1, 1))}
+            onNext={() => setCountPage((page) => page + 1)}
+          />
         </div>
       </section>
     </main>

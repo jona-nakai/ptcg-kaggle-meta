@@ -201,6 +201,13 @@ h2 {
   gap: 12px;
 }
 
+.table-footer {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 .section-switch {
   background: var(--control);
   border: 1px solid var(--control-border);
@@ -519,6 +526,11 @@ h2 {
 
   .pager {
     justify-content: space-between;
+  }
+
+  .table-footer {
+    align-items: stretch;
+    justify-content: stretch;
   }
 
   .table-controls {
