@@ -90,11 +90,11 @@ function Header({ children, dates, selectedDate, onDateChange, showLinks = true,
         {children}
         {showLinks ? (
           <div className="header-links">
-            <a className="competition-link" href={competitionUrl} target="_blank" rel="noreferrer">
+            <a className="competition-link" href={competitionUrl} target="_blank" rel="noopener noreferrer">
               Kaggle Competition Link
             </a>
             <span className="header-link-separator">/</span>
-            <a className="competition-link" href={episodesIndexUrl} target="_blank" rel="noreferrer">
+            <a className="competition-link" href={episodesIndexUrl} target="_blank" rel="noopener noreferrer">
               Kaggle Competition Data Link
             </a>
           </div>

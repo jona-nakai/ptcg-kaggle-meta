@@ -11,6 +11,20 @@ from backend.pipeline import read_index_rows
 INDEX_DATASET = "kaggle/pokemon-tcg-ai-battle-episodes-index"
 
 
+def download_kaggle_dataset(handle: str, output_dir: Path) -> Path:
+    try:
+        return Path(kagglehub.dataset_download(handle, output_dir=str(output_dir)))
+    except Exception as exc:
+        message = str(exc)
+        if "403" in message or exc.__class__.__name__ == "KaggleApiHTTPError":
+            raise RuntimeError(
+                "Kaggle denied access while downloading "
+                f"{handle}. Check that the Modal secret has a current Kaggle API token "
+                "and that the Kaggle account has accepted any required competition or dataset terms."
+            ) from exc
+        raise
+
+
 def normalize_dataset_handle(value: str) -> str:
     value = value.strip()
     if value.startswith("http://") or value.startswith("https://"):
@@ -48,9 +62,7 @@ def missing_dataset_rows(
 def download_index_dataset(data_root: Path) -> Path:
     index_dir = data_root / "pokemon-tcg-ai-battle-episodes-index"
     index_dir.mkdir(parents=True, exist_ok=True)
-    return Path(
-        kagglehub.dataset_download(INDEX_DATASET, output_dir=str(index_dir))
-    )
+    return download_kaggle_dataset(INDEX_DATASET, index_dir)
 
 
 def download_daily_dataset(data_root: Path, selected: dict[str, str]) -> Path:
@@ -58,7 +70,7 @@ def download_daily_dataset(data_root: Path, selected: dict[str, str]) -> Path:
     handle = normalize_dataset_handle(selected["daily_dataset_url"])
     dataset_dir = data_root / slug
     dataset_dir.mkdir(parents=True, exist_ok=True)
-    return Path(kagglehub.dataset_download(handle, output_dir=str(dataset_dir)))
+    return download_kaggle_dataset(handle, dataset_dir)
 
 
 def download_dataset(data_root: Path, dataset_date: str | None = None) -> tuple[Path, Path]:

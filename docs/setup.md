@@ -39,6 +39,11 @@ modal secret create ptcg-kaggle-meta \
   KAGGLE_COMPETITION_HANDLE="pokemon-tcg-ai-battle"
 ```
 
+If the Modal worker logs a Kaggle 403, create a fresh Kaggle API token for the
+same account, update `KAGGLE_USERNAME` and `KAGGLE_KEY` in this secret, and make
+sure that account has accepted any required competition or dataset terms on
+Kaggle.
+
 Deploy the scheduled worker:
 
 ```bash
