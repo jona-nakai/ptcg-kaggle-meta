@@ -133,8 +133,11 @@ function CardIdentity({ card, detail }) {
         <div className="card-thumb card-thumb-placeholder" aria-hidden="true" />
       )}
       <div className="card-copy">
-        <strong>{card.name}</strong>
-        <span>{detail ?? `Card ID ${card.id}`}</span>
+        <strong>
+          {card.name}
+          {card.id ? <span className="card-id-inline"> #{card.id}</span> : null}
+        </strong>
+        {detail ? <span>{detail}</span> : null}
       </div>
     </div>
   )
