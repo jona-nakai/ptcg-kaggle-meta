@@ -21,6 +21,16 @@ from backend.store import (
 )
 
 
+def storage_battle_players(rows: list[dict]) -> list[dict]:
+    return [
+        {
+            **row,
+            "won": False if row.get("won") is None else row.get("won"),
+        }
+        for row in rows
+    ]
+
+
 def ingest_dataset(index_path: Path, dataset_path: Path) -> dict:
     compact = build_compact_dataset(
         dataset_dir=dataset_path,
@@ -34,7 +44,7 @@ def ingest_dataset(index_path: Path, dataset_path: Path) -> dict:
     upsert_rows("decks", compact["decks"], "deck_hash")
     upsert_rows("deck_cards", compact["deck_cards"], "deck_hash,card_id")
     upsert_rows("battles", compact["battles"], "episode_id")
-    upsert_rows("battle_players", compact["battle_players"], "episode_id,player_index")
+    upsert_rows("battle_players", storage_battle_players(compact["battle_players"]), "episode_id,player_index")
     upsert_rows("daily_card_usage", compact["daily_card_usage"], "dataset_date,card_id")
 
     archetypes = build_archetype_dataset(compact)
