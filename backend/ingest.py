@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from backend.archetypes import ARCHETYPE_ALGORITHM_VERSION, build_archetype_dataset
 from backend.kaggle_refresh import (
@@ -59,7 +60,7 @@ def candidate_direct_dates(rows: list[dict[str, str]], completed_dates: set[str]
         return []
 
     latest_indexed = datetime.strptime(indexed_dates[-1], "%Y-%m-%d").date()
-    today = datetime.now(UTC).date()
+    today = datetime.now(ZoneInfo("America/Los_Angeles")).date()
     candidates = []
     current = latest_indexed + timedelta(days=1)
     while current <= today:

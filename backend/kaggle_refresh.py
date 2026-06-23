@@ -95,7 +95,7 @@ def download_daily_dataset_if_exists(data_root: Path, dataset_date: str) -> tupl
     selected = daily_dataset_row_for_date(dataset_date)
     try:
         return selected, download_daily_dataset(data_root, selected)
-    except FileNotFoundError:
+    except (FileNotFoundError, RuntimeError):
         return None
 
 
