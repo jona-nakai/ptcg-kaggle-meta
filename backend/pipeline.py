@@ -192,6 +192,7 @@ def build_compact_dataset(
         raise ValueError("Index manifest did not include a date for the selected dataset.")
 
     battle_files = sorted(dataset_dir.glob("*.json"))
+    reported_episode_count = int(selected.get("episode_count") or 0) or len(battle_files)
     cards_by_id: dict[int, str] = {}
     battles: list[dict] = []
     battle_players: list[dict] = []
@@ -301,7 +302,7 @@ def build_compact_dataset(
             "datasetSlug": selected.get("daily_dataset_slug"),
             "datasetUrl": selected.get("daily_dataset_url"),
             "indexRows": len(rows),
-            "reportedEpisodeCount": int(selected.get("episode_count") or 0),
+            "reportedEpisodeCount": reported_episode_count,
             "reportedTotalBytes": int(selected.get("total_bytes") or 0),
             "topAvgScore": float(selected.get("top_avg_score") or 0),
             "medianAvgScore": float(selected.get("median_avg_score") or 0),
@@ -325,7 +326,7 @@ def build_compact_dataset(
                 "dataset_date": selected.get("date"),
                 "dataset_slug": selected.get("daily_dataset_slug"),
                 "dataset_url": selected.get("daily_dataset_url"),
-                "episode_count": int(selected.get("episode_count") or 0),
+                "episode_count": reported_episode_count,
                 "total_bytes": int(selected.get("total_bytes") or 0),
                 "top_avg_score": float(selected.get("top_avg_score") or 0),
                 "median_avg_score": float(selected.get("median_avg_score") or 0),

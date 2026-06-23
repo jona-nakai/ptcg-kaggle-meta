@@ -9,6 +9,7 @@ from backend.pipeline import read_index_rows
 
 
 INDEX_DATASET = "kaggle/pokemon-tcg-ai-battle-episodes-index"
+DAILY_DATASET_PREFIX = "pokemon-tcg-ai-battle-episodes"
 
 
 def download_kaggle_dataset(handle: str, output_dir: Path) -> Path:
@@ -16,7 +17,11 @@ def download_kaggle_dataset(handle: str, output_dir: Path) -> Path:
         return Path(kagglehub.dataset_download(handle, output_dir=str(output_dir)))
     except Exception as exc:
         message = str(exc)
-        if "403" in message or exc.__class__.__name__ == "KaggleApiHTTPError":
+        response = getattr(exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+        if status_code == 404 or "404" in message:
+            raise FileNotFoundError(f"Kaggle dataset does not exist: {handle}") from exc
+        if status_code in (401, 403) or "403" in message:
             raise RuntimeError(
                 "Kaggle denied access while downloading "
                 f"{handle}. Check that the Modal secret has a current Kaggle API token "
@@ -71,6 +76,27 @@ def download_daily_dataset(data_root: Path, selected: dict[str, str]) -> Path:
     dataset_dir = data_root / slug
     dataset_dir.mkdir(parents=True, exist_ok=True)
     return download_kaggle_dataset(handle, dataset_dir)
+
+
+def daily_dataset_row_for_date(dataset_date: str) -> dict[str, str]:
+    slug = f"{DAILY_DATASET_PREFIX}-{dataset_date}"
+    return {
+        "date": dataset_date,
+        "daily_dataset_slug": slug,
+        "daily_dataset_url": f"https://www.kaggle.com/datasets/kaggle/{slug}",
+        "episode_count": "0",
+        "total_bytes": "0",
+        "top_avg_score": "0",
+        "median_avg_score": "0",
+    }
+
+
+def download_daily_dataset_if_exists(data_root: Path, dataset_date: str) -> tuple[dict[str, str], Path] | None:
+    selected = daily_dataset_row_for_date(dataset_date)
+    try:
+        return selected, download_daily_dataset(data_root, selected)
+    except FileNotFoundError:
+        return None
 
 
 def download_dataset(data_root: Path, dataset_date: str | None = None) -> tuple[Path, Path]:

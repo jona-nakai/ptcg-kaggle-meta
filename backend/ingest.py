@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import csv
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from backend.archetypes import ARCHETYPE_ALGORITHM_VERSION, build_archetype_dataset
 from backend.kaggle_refresh import (
+    download_daily_dataset_if_exists,
     download_daily_dataset,
     download_dataset,
     download_index_dataset,
@@ -29,6 +32,42 @@ def storage_battle_players(rows: list[dict]) -> list[dict]:
         }
         for row in rows
     ]
+
+
+def write_index_rows(path: Path, rows: list[dict[str, str]]) -> None:
+    if not rows:
+        return
+    fieldnames = [
+        "date",
+        "daily_dataset_slug",
+        "daily_dataset_url",
+        "episode_count",
+        "total_bytes",
+        "top_avg_score",
+        "median_avg_score",
+    ]
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
+
+
+def candidate_direct_dates(rows: list[dict[str, str]], completed_dates: set[str]) -> list[str]:
+    indexed_dates = sorted(row.get("date", "") for row in rows if row.get("date"))
+    if not indexed_dates:
+        return []
+
+    latest_indexed = datetime.strptime(indexed_dates[-1], "%Y-%m-%d").date()
+    today = datetime.now(UTC).date()
+    candidates = []
+    current = latest_indexed + timedelta(days=1)
+    while current <= today:
+        value = current.isoformat()
+        if value not in completed_dates:
+            candidates.append(value)
+        current += timedelta(days=1)
+    return candidates
 
 
 def ingest_dataset(index_path: Path, dataset_path: Path) -> dict:
@@ -123,6 +162,22 @@ def ingest(data_root: Path, dataset_date: str | None = None) -> dict:
         completed_dates = set()
         selected_rows = missing_dataset_rows(rows, completed_dates)[-1:]
 
+    downloaded_paths: dict[str, Path] = {}
+    direct_rows: list[dict[str, str]] = []
+    for candidate_date in candidate_direct_dates(rows, completed_dates):
+        direct_result = download_daily_dataset_if_exists(data_root, candidate_date)
+        if direct_result is None:
+            continue
+        direct_row, dataset_path = direct_result
+        direct_rows.append(direct_row)
+        downloaded_paths[direct_row["daily_dataset_slug"]] = dataset_path
+
+    if direct_rows:
+        existing_dates = {row.get("date") for row in rows}
+        rows = rows + [row for row in direct_rows if row.get("date") not in existing_dates]
+        write_index_rows(index_path / "manifest.csv", rows)
+        selected_rows = missing_dataset_rows(rows, completed_dates)
+
     if not selected_rows:
         return {
             "mode": "scheduled",
@@ -137,7 +192,9 @@ def ingest(data_root: Path, dataset_date: str | None = None) -> dict:
 
     results = []
     for selected in selected_rows:
-        dataset_path = download_daily_dataset(data_root, selected)
+        dataset_path = downloaded_paths.get(selected["daily_dataset_slug"])
+        if dataset_path is None:
+            dataset_path = download_daily_dataset(data_root, selected)
         results.append(ingest_dataset(index_path, dataset_path))
 
     return {
